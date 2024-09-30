@@ -1,13 +1,13 @@
-import os
-import re
 import cv2
 import pandas as pd
+import os
+import re
 from collections import defaultdict
-
 
 class PhaseVideoProcessor:
     """
     Class to handle the processing of cataract surgery videos, splitting them based on phases defined in a CSV.
+    It also handles repeated phases by appending an underscore and a number (e.g., _2, _3) to the file name for repeated phases.
     """
     def __init__(self, output_base_dir):
         self.output_base_dir = output_base_dir
@@ -45,8 +45,8 @@ class PhaseVideoProcessor:
             'Kapselpolishing': 'CortexRemoval',
             'Linsenimplantation': 'LensImplantation',
             'Visco-Absaugung': 'ViscoelasticSuction',
-            'Tonisieren': 'TonifyingAntibiotic',
-            'Antibiotikum': 'TonifyingAntibiotic'
+            'Tonisieren': 'TonifyingAntibiotic_1',
+            'Antibiotikum': 'TonifyingAntibiotic_2'
         }
         df['Phase Name'] = df['Phase Name'].replace(phase_mapping)
         return df
@@ -54,13 +54,15 @@ class PhaseVideoProcessor:
     def create_writer(self, phase, phase_counters, case_number, frame_size, fps):
         """
         Initializes a cv2.VideoWriter object for the given phase.
+        Handles repeated phases by appending _2, _3, etc., to the file name for repeated occurrences.
         """
         phase_counters[phase] += 1
         output_filename = f"Cataract21_ID00{case_number}_{phase}"
         if phase_counters[phase] > 1:
-            output_filename += f"({phase_counters[phase]})"
+            output_filename += f"_{phase_counters[phase]}"
         output_filename += ".mp4"
 
+        # Create phase directory if it doesn't exist
         phase_dir = os.path.join(self.output_base_dir, phase)
         os.makedirs(phase_dir, exist_ok=True)
 
@@ -74,6 +76,7 @@ class PhaseVideoProcessor:
     def process_video(self, video_file, csv_file):
         """
         Processes a single video file, splitting it into multiple phases based on the CSV file.
+        Handles repeated phases by saving subsequent occurrences as separate video files.
         """
         case_number = self.get_case_number_from_filename(os.path.basename(video_file))
 
@@ -101,6 +104,9 @@ class PhaseVideoProcessor:
         writers = {}
         frames_to_process = min(total_frames, len(df))
 
+        previous_phase = None
+        start_frame = None
+
         # Process each frame in the video
         for frame_number in range(frames_to_process):
             ret, frame = cap.read()
@@ -110,12 +116,20 @@ class PhaseVideoProcessor:
 
             phase = df.loc[frame_number, 'Phase Name']
 
-            # If the phase is new, create a new video writer for that phase
-            if phase not in writers:
+            # If phase changes (or it's the first frame)
+            if phase != previous_phase:
+                # Close the previous writer if exists
+                if previous_phase is not None and previous_phase in writers:
+                    writers[previous_phase].release()
+                    print(f"Closing writer for phase: {previous_phase}")
+
+                # Create a new writer for the current phase
                 writers[phase] = self.create_writer(phase, phase_counters, case_number, frame_size, fps)
+                start_frame = frame_number  # Record the start frame for this phase
 
             # Write the current frame to the appropriate phase video
             writers[phase].write(frame)
+            previous_phase = phase
 
         # Release all resources
         for writer in writers.values():
@@ -146,5 +160,5 @@ if __name__ == "__main__":
     # Define input and output directories (update these paths for your environment)
     input_directory = ''
     output_directory = ''
-    
+
     main(input_directory, output_directory)
