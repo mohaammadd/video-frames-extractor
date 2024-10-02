@@ -5,27 +5,19 @@ import re
 from collections import defaultdict
 
 # Define a mapping from original phase names/numbers to new custom phase names
-PHASE_MAPPING = {
-    'Viscoelastic': 'Viscoelasticum',
-    'Capsulorhexis': 'Capsulorhexis',
-    'Hydrodissection': 'Hydrodissektion',
-    'Phacoemulsification': 'Phako',
-    'Irrigation and aspiration': 'Irrigation-Aspiration',
-    'Capsule polishing': 'Kapselpolishing',
-    'Lens implantation': 'Linsenimplantation',
-    'Viscoelastic Suction': 'Visco-Absaugung',
-    'Tonifying and antibiotics': 'Tonisieren'
-}
+
 PHASE_MAPPING = {
     'Viscoelastic': 'Viscoelastic',
     'Capsulorhexis': 'Capsulorhexis',
     'Hydrodissection': 'Hydrodissection',
     'Phacoemulsification': 'Phaco',
     'Irrigation/Aspiration': 'IrrigationAspiration',
-    'Capsule polishing': 'CortexRemoval',
-    'Lens implantation': 'LensImplantation',
-    'Viscoelastic Suction': 'ViscoelasticSuction',
-    'Tonifying/Antibiotics': 'TonifyingAntibiotics'
+    'Capsule Pulishing': 'CortexRemoval',
+    'Lens Implantation': 'LensImplantation',
+    'Lens positioning': 'LensPositioning',
+    'Viscoelastic_Suction': 'ViscoelasticSuction',
+    'Tonifying/Antibiotics': 'TonifyingAntibiotics',
+    'Anterior_Chamber Flushing': 'AnteriorChamberFlushing'
 }
 
 def get_case_number_from_filename(filename):
@@ -83,15 +75,15 @@ def create_writer(phase, case_number, phase_counters, frame_size, fps, output_ba
 
     # Ensure case number is 4 digits
     case_number_str = f"ID{int(case_number):04d}"
-    output_filename = f"Cataract101_{case_number_str}_{phase}"
+    output_filename = f"Cataract1k_{case_number_str}_{phase}"
 
     if phase_counters[phase] > 1:
         output_filename += f"_{phase_counters[phase]}"  # Handle repeated phases
 
     output_filename += ".mp4"
 
-    # Create directory for the phase
-    phase_dir = os.path.join(output_base_dir, f"case_{case_number}", phase)
+    # Create directory for the phase (directly in the output base dir)
+    phase_dir = os.path.join(output_base_dir, phase)
     os.makedirs(phase_dir, exist_ok=True)
 
     # Output path for the subvideo
