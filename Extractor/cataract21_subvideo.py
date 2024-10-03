@@ -40,7 +40,7 @@ class PhaseVideoProcessor:
             'Viscoelasticum': 'Viscoelastic',
             'Rhexis': 'Capsulorhexis',
             'Hydrodissektion': 'Hydrodissection',
-            'Phako': 'Phaco',
+            'Phako': 'Phacoemulsification',
             'Irrigation-Aspiration': 'Irrigation',
             'Kapselpolishing': 'CortexRemoval',
             'Linsenimplantation': 'LensImplantation',
